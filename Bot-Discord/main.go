@@ -7,7 +7,7 @@ import (
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/Galangrs/Bot-Discord/Controllers"
+	"github.com/Galangrs/Bot-Discord/Controllers/Command"
 	"github.com/Galangrs/Bot-Discord/Config"
 )
 

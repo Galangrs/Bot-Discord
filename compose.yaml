@@ -1,19 +1,31 @@
 services:
-  botDiscord:
+  botdiscord:
     build: ./Bot-Discord
     image: bot-discord
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_ID_OWNER=${DISCORD_ID_OWNER}
       
       - REDIS_URL=http://redis:6379
 
-      - HOST_DATABASE=http://postgres:5432
-      - USER_DATABASE=${USER_DATABAS}
-      - PASSWORD_DATABASE=${PASSWORD_DATABASE}
-      - NAME_DATABASE=${NAME_DATABASE}
+      - URL_FETCH=http://restapi:80
+    depends_on:
+      - cache
+
+  restapi:
+    build: ./Rest-Api
+    image: rest-api
+    environment:
+      - REDIS_URL=http://redis:6379
+
+      - PORT=80
+      # - NODE_ENV=production
+
     depends_on:
       - cache
       - database
+    ports:
+      - "80:80"
 
   cache:
     image: redis
@@ -24,7 +36,7 @@ services:
     image: postgres
     environment:
       - POSTGRES_DB=${NAME_DATABASE}
-      - POSTGRES_USER=${USER_DATABAS}
+      - POSTGRES_USER=${USER_DATABASE}
       - POSTGRES_PASSWORD=${PASSWORD_DATABASE}
     ports:
       - "5432:5432"

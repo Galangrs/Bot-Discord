@@ -1,0 +1,138 @@
+package command
+
+import (
+	"regexp"
+	"strings"
+	"strconv"
+	"fmt"
+	"time"
+	"encoding/json"
+	
+	"github.com/bwmarrin/discordgo"
+	"github.com/Galangrs/Bot-Discord/Config"
+	"github.com/Galangrs/Bot-Discord/Controllers/Fetch"
+)
+
+func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+
+	re := regexp.MustCompile(`!([^|]+) ([^|]+) ([^|]+)`)
+
+	matches := re.FindStringSubmatch(m.Content)
+	if len(matches) == 0 {
+		if strings.ToLower(m.Content) == "!ping" {
+			// Get the current timestamp
+			timestamp := m.Timestamp
+
+			// Calculate the latency
+			latency := time.Since(timestamp)
+
+			// Respond with the latency
+			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Pong! Latency: %s", latency.String()))
+		} else if strings.ToLower(m.Content) == "!help" {
+			helpMessage(s, m, config.Owner())
+		} else if strings.ToLower(m.Content) == "!register"{
+			// Hadle register case
+			res, err := fetching.SendHTTPRequest("POST", config.URL()+"/register", []byte(`{"id": "`+m.Author.ID+`"}`))
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Error: %s", err))
+			} else {
+				// Assuming res is a JSON response like {"name": "id cannot be null"}
+				var responseMap map[string]interface{}
+				if err := json.Unmarshal(res, &responseMap); err != nil {
+					fmt.Println("Error parsing JSON:", err)
+					return
+				}
+
+				// Access the "name" fields from the response
+				name, ok := responseMap["name"].(string)
+				if !ok {
+					fmt.Println("Error extracting name from JSON")
+					return
+				}
+
+				// Build the response string
+				resStr := fmt.Sprintf("%s", name)
+
+				// Send the message to the Discord channel
+				s.ChannelMessageSend(m.ChannelID, resStr)
+			}	
+		}
+		return
+	}
+
+	// Convert case-insensitive comparison
+	cmd := strings.ToLower(matches[1])
+
+	switch cmd {
+	case "buy":
+		item := strings.ToLower(matches[2])
+		value := strings.ToLower(matches[3])
+		if item == "cid" {
+			// Handle buy cid case
+			// Attempt to convert value to an integer
+			number, err := strconv.Atoi(value)
+
+			// Check if conversion was successful
+			if err == nil {
+				// value is a valid integer
+				if number < 1 {
+					s.ChannelMessageSend(m.ChannelID, "Invalid quantity. Please provide a quantity greater than or equal to 1.")
+				} else {
+					s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Are you sure you want to buy %d?", number))
+				}
+			} else {
+				// lowerValue is not a valid integer
+				s.ChannelMessageSend(m.ChannelID, fmt.Sprintf(`Invalid input. Please use the format "!%s %s 1" and provide a valid numeric value.`, matches[1], matches[2]))
+			}
+		}
+	case "addball":
+		// Handle addball case
+	case "useball":
+		// Handle useball case
+	case "help":
+		// Handle help case
+		helpMessage(s, m, config.Owner())
+	default:
+		// If cmd doesn't match any of the above cases
+		s.ChannelMessageSend(m.ChannelID, "Unknown command. Type 'help' for assistance.")
+	}
+}
+
+func helpMessage(s *discordgo.Session, m *discordgo.MessageCreate, ownerID string) {
+	if m.Author.ID == ownerID {
+		s.ChannelMessageSend(m.ChannelID, `
+**Command: !buy <item> <quantity>**
+- Buy items from the store.
+	Example: !buy cid 5
+
+**Command: !addball <id client> <value>**
+- Add a balance to a client's inventory.
+	Example: !addball 1234567890 10
+
+**Command: !useball <id client> <value>**
+- Use a balance from a client's inventory.
+	Example: !useball 1234567890 5
+
+**Note:**
+- Make sure to use the correct format for the commands.
+- Replace <item> and <quantity> with the specific item and quantity you want to buy.
+- Replace <id client> with the client ID, and <value> with the desired value when using !addball or !useball.
+- Use "!addball" to add a balance to a client's inventory. For example, "!addball 1234567890 10" adds 10 to the balance for the client with ID 1234567890.
+- Use "!useball" to deduct a balance from a client's inventory. For example, "!useball 1234567890 5" deducts 5 from the balance for the client with ID 1234567890.
+`)		
+	} else {
+		s.ChannelMessageSend(m.ChannelID, `
+**Command: !buy <item> <quantity>**
+- Buy items from the store.
+	Example: !buy cid 5
+
+**Note:**
+- Make sure to use the correct format for the commands.
+- Replace <item> and <quantity> with the specific item and quantity you want to buy.
+`)
+	}
+}
