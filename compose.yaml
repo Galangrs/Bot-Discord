@@ -1,5 +1,6 @@
 services:
   botdiscord:
+    container_name: botdiscord
     build: ./Bot-Discord
     image: bot-discord
     environment:
@@ -10,29 +11,32 @@ services:
 
       - URL_FETCH=http://restapi:80
     depends_on:
-      - cache
+      - redis
 
   restapi:
+    container_name: restapi
     build: ./Rest-Api
     image: rest-api
     environment:
       - REDIS_URL=http://redis:6379
-
+      
       - PORT=80
-      # - NODE_ENV=production
+      - NODE_ENV=production
 
     depends_on:
-      - cache
-      - database
+      - redis
+      - postgres
     ports:
       - "80:80"
 
-  cache:
+  redis:
+    container_name: redis
     image: redis
     ports:
       - "6379:6379"
 
-  database:
+  postgres:
+    container_name: postgres
     image: postgres
     environment:
       - POSTGRES_DB=${NAME_DATABASE}
