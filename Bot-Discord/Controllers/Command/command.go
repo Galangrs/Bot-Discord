@@ -82,17 +82,82 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				if number < 1 {
 					s.ChannelMessageSend(m.ChannelID, "Invalid quantity. Please provide a quantity greater than or equal to 1.")
 				} else {
-					s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Are you sure you want to buy %d?", number))
+					res, err := fetching.SendHTTPRequest("PUT", config.URL()+"/buycid", []byte(`{"id": "`+m.Author.ID+`","quantity":"`+value+`"}`))
+					if err != nil {
+						// Assuming res is a JSON response like {"name": "Internal Server Error"}
+						var responseMap map[string]interface{}
+						if err := json.Unmarshal([]byte(res), &responseMap); err != nil {
+							fmt.Println("Error parsing JSON:", err)
+							return
+						}
+
+						// Access the "name" field from the response
+						name, ok := responseMap["name"].(string)
+						if !ok {
+							fmt.Println("Error extracting name from JSON")
+							return
+						}
+
+						// Build the response string
+						resStr := name
+						s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Error: %s", resStr))
+					} else {
+						// Assuming res is a JSON response like {"name": "uniqcode\nuniqcode"}
+						var responseMap map[string]interface{}
+						if err := json.Unmarshal(res, &responseMap); err != nil {
+							fmt.Println("Error parsing JSON:", err)
+							return
+						}
+		
+						// Access the "name" fields from the response
+						name, ok := responseMap["name"].(string)
+						if !ok {
+							fmt.Println("Error extracting name from JSON")
+							return
+						}
+		
+						// Build the response string
+						resStr := fmt.Sprintf("%s", name)
+
+						// Send the message to the Discord channel
+						channel, err := s.UserChannelCreate(m.Author.ID)
+						if err != nil {
+							fmt.Println("Error creating channel:", err)
+							s.ChannelMessageSend(
+								m.ChannelID,
+								"Something went wrong while sending the DM!",
+							)
+							return
+						}
+						// Create a File structure with the text content
+						fileToSend := &discordgo.File{
+							Name:   "file.txt",
+							Reader: strings.NewReader(resStr),
+						}
+
+						// Send the file to the Discord channel
+						s.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
+							Content: "CID items at here",
+							Files:   []*discordgo.File{fileToSend},
+						})
+						s.ChannelMessageSend(m.ChannelID, "Succes buy item")
+					}	
 				}
 			} else {
 				// lowerValue is not a valid integer
 				s.ChannelMessageSend(m.ChannelID, fmt.Sprintf(`Invalid input. Please use the format "!%s %s 1" and provide a valid numeric value.`, matches[1], matches[2]))
 			}
 		}
-	case "addball":
-		// Handle addball case
-	case "useball":
-		// Handle useball case
+	case "addbal":
+		// Handle addbal case
+		idClient := strings.ToLower(matches[2])
+		value := strings.ToLower(matches[3])
+		addbalMessage(s, m, config.Owner(), idClient, value)
+	case "delbal":
+		// Handle delbal case
+		idClient := strings.ToLower(matches[2])
+		value := strings.ToLower(matches[3])
+		delbalMessage(s, m, config.Owner(), idClient, value)
 	case "help":
 		// Handle help case
 		helpMessage(s, m, config.Owner())
@@ -109,30 +174,102 @@ func helpMessage(s *discordgo.Session, m *discordgo.MessageCreate, ownerID strin
 - Buy items from the store.
 	Example: !buy cid 5
 
-**Command: !addball <id client> <value>**
+**Command: !addbal <id client> <value>**
 - Add a balance to a client's inventory.
-	Example: !addball 1234567890 10
+	Example: !addbal 1234567890 10
 
-**Command: !useball <id client> <value>**
+**Command: !delbal <id client> <value>**
 - Use a balance from a client's inventory.
-	Example: !useball 1234567890 5
+	Example: !delbal 1234567890 5
+
+**Command: !register**
+- register your account discord
+	Example: !register
 
 **Note:**
 - Make sure to use the correct format for the commands.
 - Replace <item> and <quantity> with the specific item and quantity you want to buy.
-- Replace <id client> with the client ID, and <value> with the desired value when using !addball or !useball.
-- Use "!addball" to add a balance to a client's inventory. For example, "!addball 1234567890 10" adds 10 to the balance for the client with ID 1234567890.
-- Use "!useball" to deduct a balance from a client's inventory. For example, "!useball 1234567890 5" deducts 5 from the balance for the client with ID 1234567890.
+- Replace <id client> with the client ID, and <value> with the desired value when using !addbal or !delbal.
+- Use "!addbal" to add a balance to a client's inventory. For example, "!addbal 1234567890 10" adds 10 to the balance for the client with ID 1234567890.
+- Use "!delbal" to deduct a balance from a client's inventory. For example, "!delbal 1234567890 5" deducts 5 from the balance for the client with ID 1234567890.
+- Use "!register" to register account at store
 `)		
 	} else {
 		s.ChannelMessageSend(m.ChannelID, `
 **Command: !buy <item> <quantity>**
 - Buy items from the store.
 	Example: !buy cid 5
+	
+**Command: !register**
+- register your account discord
+	Example: !register
 
 **Note:**
 - Make sure to use the correct format for the commands.
 - Replace <item> and <quantity> with the specific item and quantity you want to buy.
+- Use "!register" to register account at store
 `)
+	}
+}
+
+func addbalMessage(s *discordgo.Session, m *discordgo.MessageCreate, ownerID string, idClient string,value string) {
+	if m.Author.ID == ownerID {
+		res, err := fetching.SendHTTPRequest("PUT", config.URL()+"/addbal", []byte(`{"id": "`+idClient+`","value":"`+value+`"}`))
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Error: %s", err))
+		} else {
+			// Assuming res is a JSON response like {"name": "uniqcode\nuniqcode"}
+			var responseMap map[string]interface{}
+			if err := json.Unmarshal(res, &responseMap); err != nil {
+				fmt.Println("Error parsing JSON:", err)
+				return
+			}
+
+			// Access the "name" fields from the response
+			name, ok := responseMap["name"].(string)
+			if !ok {
+				fmt.Println("Error extracting name from JSON")
+				return
+			}
+
+			// Build the response string
+			resStr := fmt.Sprintf("%s", name)
+
+			// Send the message to the Discord channel
+			s.ChannelMessageSend(m.ChannelID, resStr)
+		}
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "you no have promise in command this")
+	}
+}
+
+func delbalMessage(s *discordgo.Session, m *discordgo.MessageCreate, ownerID string, idClient string,value string) {
+	if m.Author.ID == ownerID {
+		res, err := fetching.SendHTTPRequest("PUT", config.URL()+"/delbal", []byte(`{"id": "`+idClient+`","value":"`+value+`"}`))
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Error: %s", err))
+		} else {
+			// Assuming res is a JSON response like {"name": "uniqcode\nuniqcode"}
+			var responseMap map[string]interface{}
+			if err := json.Unmarshal(res, &responseMap); err != nil {
+				fmt.Println("Error parsing JSON:", err)
+				return
+			}
+
+			// Access the "name" fields from the response
+			name, ok := responseMap["name"].(string)
+			if !ok {
+				fmt.Println("Error extracting name from JSON")
+				return
+			}
+
+			// Build the response string
+			resStr := fmt.Sprintf("%s", name)
+
+			// Send the message to the Discord channel
+			s.ChannelMessageSend(m.ChannelID, resStr)
+		}
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "you no have promise in command this")
 	}
 }

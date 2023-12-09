@@ -2,22 +2,31 @@ function errorHandler(err, req, res, next) {
     console.log(err)
     let status = 500
     let reason = {
-        error: "Internal Server Error",
+        name: "Internal Server Error",
     }
 
     if (
         err.name === "SequelizeUniqueConstraintError" ||
-        err.name === "SequelizeValidationError" ||
-        err.name === "SequelizeDatabaseError"
+        err.name === "SequelizeValidationError"
     ) {
         status = 401
         reason = { name: err.message }
     } else if (
-        err.name === "InvalidUser" ||
-        err.name === "InvalidCreated" ||
-        err.name === "ErrorUpdateCategory" 
+        err.name === "InvalidBuy" || 
+        err.name === "InvalidAddBal" ||
+        err.name === "InvalidDelBal"
     ) {
         status = 400
+        reason = { name: err.message }
+    } else if (
+        err.name === "InvalidCreated"
+    ) {
+        status = 401
+        reason = { name: err.message }
+    } else if (
+        err.name === "SequelizeDatabaseError"
+    ) {
+        status = 500
         reason = { name: err.message }
     }
 
