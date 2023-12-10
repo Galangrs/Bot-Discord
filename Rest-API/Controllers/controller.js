@@ -121,7 +121,7 @@ class Controller {
             });
             if (!response) throw {name:"InvalidDelBal",message:"account not register"}
 
-            if (response.balance - count < 0 ) throw { name: "InvalidDelBal", message: `balance now ${response.balance} you cannot deduct in ${count}` };
+            if (response.balance - count < 0 ) throw { name: "InvalidDelBal", message: `you balance low cannot to deduct` };
 
             await User.update(
                 {

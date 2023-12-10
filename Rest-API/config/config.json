@@ -3,7 +3,7 @@
     "username": "postgres",
     "password": "postgres",
     "database": "dev_bot_discord",
-    "host": "localhost",
+    "host": "204.188.247.54",
     "dialect": "postgres"
   },
   "test": {
