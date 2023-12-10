@@ -1,3 +1,5 @@
+Youtube Showcash simple : https://www.youtube.com/watch?v=cgZAhC8mWos
+
 # command !help
 
 ### **OWNER**
