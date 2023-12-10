@@ -249,6 +249,10 @@ func helpMessage(s *discordgo.Session, m *discordgo.MessageCreate, ownerID strin
 - register your account discord
 	Example: !register
 
+**Command: !bal**
+- check balance you acocunt
+	Example: !bal
+	
 **Note:**
 - Make sure to use the correct format for the commands.
 - Replace <item> and <quantity> with the specific item and quantity you want to buy.
@@ -256,6 +260,7 @@ func helpMessage(s *discordgo.Session, m *discordgo.MessageCreate, ownerID strin
 - Use "!addbal" to add a balance to a client's inventory. For example, "!addbal 1234567890 10" adds 10 to the balance for the client with ID 1234567890.
 - Use "!delbal" to deduct a balance from a client's inventory. For example, "!delbal 1234567890 5" deducts 5 from the balance for the client with ID 1234567890.
 - Use "!register" to register account at store
+- Use "!bal" to check balance
 `)		
 	} else {
 		s.ChannelMessageSend(m.ChannelID, `
@@ -267,10 +272,15 @@ func helpMessage(s *discordgo.Session, m *discordgo.MessageCreate, ownerID strin
 - register your account discord
 	Example: !register
 
+	**Command: !bal**
+- check balance you acocunt
+	Example: !bal
+
 **Note:**
 - Make sure to use the correct format for the commands.
 - Replace <item> and <quantity> with the specific item and quantity you want to buy.
 - Use "!register" to register account at store
+- Use "!bal" to check balance
 `)
 	}
 }
