@@ -18,6 +18,8 @@ services:
     build: ./Rest-Api
     image: rest-api
     environment:
+      - DISCORD_ID_OWNER=${DISCORD_ID_OWNER}
+
       - REDIS_URL=http://redis:6379
       
       - PORT=80

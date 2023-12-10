@@ -36,10 +36,8 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			helpMessage(s, m, config.Owner())
 		} else if strings.ToLower(m.Content) == "!register"{
 			// Hadle register case
-			res, err := fetching.SendHTTPRequest("POST", config.URL()+"/register", []byte(`{"id": "`+m.Author.ID+`"}`))
+			res, err := fetching.SendHTTPRequest("POST", config.URL()+"/register", []byte(`{"id": "`+m.Author.ID+`"}`), nil)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Error: %s", err))
-			} else {
 				// Assuming res is a JSON response like {"name": "id cannot be null"}
 				var responseMap map[string]interface{}
 				if err := json.Unmarshal(res, &responseMap); err != nil {
@@ -59,7 +57,70 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 				// Send the message to the Discord channel
 				s.ChannelMessageSend(m.ChannelID, resStr)
+			} else {
+				// Assuming res is a JSON response like {"name": "success"}
+				var responseMap map[string]interface{}
+				if err := json.Unmarshal(res, &responseMap); err != nil {
+					fmt.Println("Error parsing JSON:", err)
+					return
+				}
+
+				// Access the "name" fields from the response
+				name, ok := responseMap["name"].(string)
+				if !ok {
+					fmt.Println("Error extracting name from JSON")
+					return
+				}
+
+				// Build the response string
+				resStr := fmt.Sprintf("%s", name)
+
+				// Send the message to the Discord channel
+				s.ChannelMessageSend(m.ChannelID, resStr)
 			}	
+		} else if strings.ToLower(m.Content) == "!bal" {
+			res, err := fetching.SendHTTPRequest("GET", config.URL()+"/balance", nil , map[string]string{"id": m.Author.ID})
+			if err != nil {
+				// Assuming res is a JSON response like {"name": "Internal Server Error"}
+				var responseMap map[string]interface{}
+				if err := json.Unmarshal(res, &responseMap); err != nil {
+					fmt.Println("Error parsing JSON:", err)
+					return
+				}
+
+				// Access the "name" fields from the response
+				name, ok := responseMap["name"].(string)
+				if !ok {
+					fmt.Println("Error extracting name from JSON")
+					return
+				}
+
+				// Build the response string
+				resStr := fmt.Sprintf("%s", name)
+
+				// Send the message to the Discord channel
+				s.ChannelMessageSend(m.ChannelID, resStr)
+			} else {
+				// Assuming res is a JSON response like {"name": "your balance 200"}
+				var responseMap map[string]interface{}
+				if err := json.Unmarshal(res, &responseMap); err != nil {
+					fmt.Println("Error parsing JSON:", err)
+					return
+				}
+
+				// Access the "name" fields from the response
+				name, ok := responseMap["name"].(string)
+				if !ok {
+					fmt.Println("Error extracting name from JSON")
+					return
+				}
+
+				// Build the response string
+				resStr := fmt.Sprintf("%s", name)
+
+				// Send the message to the Discord channel
+				s.ChannelMessageSend(m.ChannelID, resStr)
+			}
 		}
 		return
 	}
@@ -82,16 +143,16 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				if number < 1 {
 					s.ChannelMessageSend(m.ChannelID, "Invalid quantity. Please provide a quantity greater than or equal to 1.")
 				} else {
-					res, err := fetching.SendHTTPRequest("PUT", config.URL()+"/buycid", []byte(`{"id": "`+m.Author.ID+`","quantity":"`+value+`"}`))
+					res, err := fetching.SendHTTPRequest("PUT", config.URL()+"/buycid", []byte(`{"quantity":"`+value+`"}`), map[string]string{"id": m.Author.ID})
 					if err != nil {
 						// Assuming res is a JSON response like {"name": "Internal Server Error"}
 						var responseMap map[string]interface{}
-						if err := json.Unmarshal([]byte(res), &responseMap); err != nil {
+						if err := json.Unmarshal(res, &responseMap); err != nil {
 							fmt.Println("Error parsing JSON:", err)
 							return
 						}
 
-						// Access the "name" field from the response
+						// Access the "name" fields from the response
 						name, ok := responseMap["name"].(string)
 						if !ok {
 							fmt.Println("Error extracting name from JSON")
@@ -99,8 +160,10 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 						}
 
 						// Build the response string
-						resStr := name
-						s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Error: %s", resStr))
+						resStr := fmt.Sprintf("%s", name)
+
+						// Send the message to the Discord channel
+						s.ChannelMessageSend(m.ChannelID, resStr)
 					} else {
 						// Assuming res is a JSON response like {"name": "uniqcode\nuniqcode"}
 						var responseMap map[string]interface{}
@@ -214,11 +277,29 @@ func helpMessage(s *discordgo.Session, m *discordgo.MessageCreate, ownerID strin
 
 func addbalMessage(s *discordgo.Session, m *discordgo.MessageCreate, ownerID string, idClient string,value string) {
 	if m.Author.ID == ownerID {
-		res, err := fetching.SendHTTPRequest("PUT", config.URL()+"/addbal", []byte(`{"id": "`+idClient+`","value":"`+value+`"}`))
+		res, err := fetching.SendHTTPRequest("PUT", config.URL()+"/addbal", []byte(`{"id": "`+idClient+`","value":"`+value+`"}`) , map[string]string{"id": m.Author.ID})
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Error: %s", err))
+			// Assuming res is a JSON response like {"name": "Internal Server Error"}
+			var responseMap map[string]interface{}
+			if err := json.Unmarshal(res, &responseMap); err != nil {
+				fmt.Println("Error parsing JSON:", err)
+				return
+			}
+
+			// Access the "name" fields from the response
+			name, ok := responseMap["name"].(string)
+			if !ok {
+				fmt.Println("Error extracting name from JSON")
+				return
+			}
+
+			// Build the response string
+			resStr := fmt.Sprintf("%s", name)
+
+			// Send the message to the Discord channel
+			s.ChannelMessageSend(m.ChannelID, resStr)
 		} else {
-			// Assuming res is a JSON response like {"name": "uniqcode\nuniqcode"}
+			// Assuming res is a JSON response like {"name": "sucess"}
 			var responseMap map[string]interface{}
 			if err := json.Unmarshal(res, &responseMap); err != nil {
 				fmt.Println("Error parsing JSON:", err)
@@ -245,11 +326,29 @@ func addbalMessage(s *discordgo.Session, m *discordgo.MessageCreate, ownerID str
 
 func delbalMessage(s *discordgo.Session, m *discordgo.MessageCreate, ownerID string, idClient string,value string) {
 	if m.Author.ID == ownerID {
-		res, err := fetching.SendHTTPRequest("PUT", config.URL()+"/delbal", []byte(`{"id": "`+idClient+`","value":"`+value+`"}`))
+		res, err := fetching.SendHTTPRequest("PUT", config.URL()+"/delbal", []byte(`{"id": "`+idClient+`","value":"`+value+`"}`) , map[string]string{"id": m.Author.ID})
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Error: %s", err))
+			// Assuming res is a JSON response like {"name": "Internal Server Error"}
+			var responseMap map[string]interface{}
+			if err := json.Unmarshal(res, &responseMap); err != nil {
+				fmt.Println("Error parsing JSON:", err)
+				return
+			}
+
+			// Access the "name" fields from the response
+			name, ok := responseMap["name"].(string)
+			if !ok {
+				fmt.Println("Error extracting name from JSON")
+				return
+			}
+
+			// Build the response string
+			resStr := fmt.Sprintf("%s", name)
+
+			// Send the message to the Discord channel
+			s.ChannelMessageSend(m.ChannelID, resStr)
 		} else {
-			// Assuming res is a JSON response like {"name": "uniqcode\nuniqcode"}
+			// Assuming res is a JSON response like {"name": "sucess"}
 			var responseMap map[string]interface{}
 			if err := json.Unmarshal(res, &responseMap); err != nil {
 				fmt.Println("Error parsing JSON:", err)

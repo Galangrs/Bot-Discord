@@ -7,11 +7,14 @@ import (
 	"net/http"
 )
 
-func SendHTTPRequest(method, url string, data []byte) ([]byte, error) {
+func SendHTTPRequest(method, url string, data []byte, headers map[string]string) ([]byte, error) {
 	var requestBody *bytes.Reader
 	if data != nil {
 		requestBody = bytes.NewReader(data)
+	} else {
+		requestBody = bytes.NewReader([]byte{}) // or bytes.NewReader(nil)
 	}
+	
 
 	request, err := http.NewRequest(method, url, requestBody)
 	if err != nil {
@@ -20,6 +23,11 @@ func SendHTTPRequest(method, url string, data []byte) ([]byte, error) {
 
 	// Set the Content-Type header
 	request.Header.Add("Content-Type", "application/json")
+
+	// Add custom headers
+	for key, value := range headers {
+		request.Header.Add(key, value)
+	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
@@ -34,7 +42,8 @@ func SendHTTPRequest(method, url string, data []byte) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		return responseBody, errors.New(string(responseBody))
+		errMsg := string(responseBody)
+		return responseBody, errors.New("HTTP error: " + errMsg)
 	}
 
 	responseBody, err := ioutil.ReadAll(response.Body)

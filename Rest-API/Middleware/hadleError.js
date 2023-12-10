@@ -14,12 +14,15 @@ function errorHandler(err, req, res, next) {
     } else if (
         err.name === "InvalidBuy" || 
         err.name === "InvalidAddBal" ||
-        err.name === "InvalidDelBal"
+        err.name === "InvalidDelBal" ||
+        err.name === "InvalidGetBal"
     ) {
         status = 400
         reason = { name: err.message }
     } else if (
-        err.name === "InvalidCreated"
+        err.name === "InvalidCreated" ||
+        err.name === "Authorization" ||
+        err.name === "Authentication" 
     ) {
         status = 401
         reason = { name: err.message }

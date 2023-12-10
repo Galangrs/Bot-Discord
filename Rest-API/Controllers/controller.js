@@ -20,7 +20,8 @@ class Controller {
     }
 
     static async buyCID(req, res, next) {
-        const { quantity: count, id: userid } = req.body;
+        const { id:userid } = req.user
+        const { quantity: count } = req.body;
         const t = await sequelize.transaction();
         try {
             if (!count) throw { name: "InvalidBuy", message: "quantity cannot be null" };
@@ -78,7 +79,7 @@ class Controller {
     }
 
     static async addBal(req,res,next){
-        const { value: count, id: userid } = req.body;
+        const { value: count ,id:userid} = req.body;
         try {
             if (!count) throw { name: "InvalidAddBal", message: "value cannot be null" };
             if (!Number(count)) throw { name: "InvalidAddBal", message: "value is integer" };
@@ -106,7 +107,7 @@ class Controller {
     }
 
     static async delBal(req,res,next){
-        const { value: count, id: userid } = req.body;
+        const { value: count ,id:userid} = req.body;
         try {
             if (!count) throw { name: "InvalidDelBal", message: "value cannot be null" };
             if (!Number(count)) throw { name: "InvalidDelBal", message: "value is integer" };
@@ -133,6 +134,22 @@ class Controller {
                 },
             );
             res.status(200).json({name:"Success deduct balance"})
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    static async getBal(req,res,next){
+        const { id:userid } = req.user
+        try {
+            const response = await User.findOne({
+                where:{
+                    userid
+                }
+            })
+            if (!response) throw {name:"InvalidGetBal",message:"account not register"}
+
+            res.status(200).json({name:"you balace : " + response.balance})
         } catch (error) {
             next(error)
         }
